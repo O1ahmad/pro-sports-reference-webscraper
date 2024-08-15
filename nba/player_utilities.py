@@ -18,7 +18,7 @@ def get_player_list(last_initial: str):
     table_rows = page_content.find('tbody').find_all('tr')
     for row in table_rows:
         data = {}
-        data['player'] = row.find('th', {'data-stat': 'player'}).text
+        data['player'] = row.find('th', {'data-stat': 'player'}).text.encode('latin1').decode('utf-8')
         data['link'] = row.find('a').get('href').replace('.html', '')
         data['year_min'] = row.find('td', {'data-stat': 'year_min'}).text
         data['year_max'] = row.find('td', {'data-stat': 'year_max'}).text
@@ -38,7 +38,7 @@ def get_player_list(last_initial: str):
     return players
 
 def main():
-    print(json.dumps(get_player_list('z'), indent=2))
+    print(json.dumps(get_player_list('z'), indent=2, ensure_ascii=False))
 
 if __name__ == '__main__':
     main()
