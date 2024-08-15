@@ -2,6 +2,8 @@ import pandas as pd  # type: ignore
 from bs4 import BeautifulSoup
 import requests
 import json
+from bs4.element import Tag
+from typing import Optional
 
 def get_soup(response: requests.Response) -> BeautifulSoup:
     return BeautifulSoup(response.text, 'html.parser')
@@ -10,7 +12,7 @@ def convert_height_to_inches(height: str) -> int:
     feet, inches = map(int, height.split('-'))
     return feet * 12 + inches
 
-def get_stat_value(row, stat_name: str, is_text=True):
+def get_stat_value(row: Tag, stat_name: str, is_text=True) -> Optional[str]:
     try:
         element = row.find('td', {'data-stat': stat_name})
         return element.text if is_text else element
@@ -50,7 +52,7 @@ def get_player_list(last_initial: str):
     return players
 
 def main():
-    print(json.dumps(get_player_list('z'), indent=2, ensure_ascii=False))
+    print(json.dumps(get_player_list('a'), indent=2, ensure_ascii=False))
 
 if __name__ == '__main__':
     main()
