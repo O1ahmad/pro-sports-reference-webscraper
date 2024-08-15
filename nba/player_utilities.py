@@ -23,7 +23,28 @@ def get_stat_value(row: Tag, stat_name: str, is_text=True) -> Optional[str]:
         print(f"'{stat_name}' not found for row.")
         return None
 
-def get_player_list(last_initial: str, mongodb_url=None):
+def store_documents_in_mongodb(documents: list, mongodb_url: str, db_name: str, collection_name: str, unique_property: str):
+    client = MongoClient(mongodb_url)
+    db = client[db_name]
+    collection = db[collection_name]
+
+    for document in documents:
+        print(f"Storing document with {unique_property}: {document.get(unique_property)}")
+        try:
+            query = {unique_property: document[unique_property]}
+            existing_document = collection.find_one(query)
+        except Exception as e:
+            print(f"Error encountered accessing MongoDB: {str(e)}")
+            existing_document = None
+
+        if existing_document:
+            print(f"Document with {unique_property}: {document[unique_property]} found in MongoDB:")
+            print(json.dumps(existing_document, indent=4, default=json_util.default))
+        else:
+            collection.insert_one(document)
+            print(f"Document with {unique_property}: {document[unique_property]} inserted into MongoDB")
+
+def get_player_list(last_initial: str):
     url = f'https://www.basketball-reference.com/players/{last_initial.lower()}/'
     page_content = get_soup(requests.get(url))
 
@@ -52,32 +73,19 @@ def get_player_list(last_initial: str, mongodb_url=None):
         
         players.append(data)
 
-    db = None
-    if mongodb_url:
-        print("Storing data in mongodb...")
-        client = MongoClient(mongodb_url)
-        db = client.nba_players
-
-        for p in players:
-            print(f"Storing {p['player']}")
-            try:
-                existing_document = db.nba_players.find_one({"player": p['player']})
-            except Exception as e:
-                print(f"Error encountered accessing Mongo DB: {str(e)}")
-                existing_document = None
-
-            if existing_document:
-                print(f"Document for {p['player']} found in MongoDB:")
-                print(json.dumps(existing_document, indent=4, default=json_util.default))
-            else:
-                db.nba_players.insert_one(p)
-                print(f"Results for {p['player']} inserted into MongoDB")
-
     return players
 
 def main(mongodb_url=None):
-    plist = get_player_list('b', mongodb_url)
-    print(json.dumps(plist, indent=2, ensure_ascii=False))
+    players = get_player_list('a')
+    
+    if mongodb_url:
+        print("Storing data in MongoDB...")
+        collection_name = "nba_players"
+        db_name = collection_name  # Set the database name to be the same as the collection name
+        unique_property = "player"
+        store_documents_in_mongodb(players, mongodb_url, db_name, collection_name, unique_property)
+    
+    print(json.dumps(players, indent=2, ensure_ascii=False))
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Basketball Reference Webscraper")
