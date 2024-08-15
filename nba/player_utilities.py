@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 import requests
 import json
 from bs4.element import Tag
-from typing import Optional
+from typing import Optional, List
 from pymongo import MongoClient
 from bson import json_util
 
@@ -23,26 +23,29 @@ def get_stat_value(row: Tag, stat_name: str, is_text=True) -> Optional[str]:
         print(f"'{stat_name}' not found for row.")
         return None
 
-def store_documents_in_mongodb(documents: list, mongodb_url: str, db_name: str, collection_name: str, unique_property: str):
+def store_documents_in_mongodb(documents: list, mongodb_url: str, db_name: str, collection_name: str, unique_properties: List[str]):
     client = MongoClient(mongodb_url)
     db = client[db_name]
     collection = db[collection_name]
 
     for document in documents:
-        print(f"Storing document with {unique_property}: {document.get(unique_property)}")
+        print(f"Storing document with unique properties: {unique_properties}")
+
+        # Build the query using the list of unique properties
+        query = {prop: document[prop] for prop in unique_properties if prop in document}
+        
         try:
-            query = {unique_property: document[unique_property]}
             existing_document = collection.find_one(query)
         except Exception as e:
             print(f"Error encountered accessing MongoDB: {str(e)}")
             existing_document = None
 
         if existing_document:
-            print(f"Document with {unique_property}: {document[unique_property]} found in MongoDB:")
+            print(f"Document with unique properties {query} found in MongoDB:")
             print(json.dumps(existing_document, indent=4, default=json_util.default))
         else:
             collection.insert_one(document)
-            print(f"Document with {unique_property}: {document[unique_property]} inserted into MongoDB")
+            print(f"Document with unique properties {query} inserted into MongoDB")
 
 def get_player_list(last_initial: str):
     url = f'https://www.basketball-reference.com/players/{last_initial.lower()}/'
@@ -81,9 +84,9 @@ def main(mongodb_url=None):
     if mongodb_url:
         print("Storing data in MongoDB...")
         collection_name = "nba_players"
-        db_name = collection_name  # Set the database name to be the same as the collection name
-        unique_property = "player"
-        store_documents_in_mongodb(players, mongodb_url, db_name, collection_name, unique_property)
+        db_name = collection_name
+        unique_properties = ["player", "birth_date"]  # List of properties to determine document uniqueness
+        store_documents_in_mongodb(players, mongodb_url, db_name, collection_name, unique_properties)
     
     print(json.dumps(players, indent=2, ensure_ascii=False))
 
