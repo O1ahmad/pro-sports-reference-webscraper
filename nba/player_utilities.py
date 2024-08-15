@@ -29,9 +29,9 @@ def get_player_list(last_initial: str):
     return players
 
 def main():
-    a_players = get_player_list('A')
-    b_players = get_player_list('B')
-    import pdb; pdb.set_trace()
+    print(get_player_list('A'))
+    print(get_player_list('Z'))
+
 
 if __name__ == '__main__':
     main()
