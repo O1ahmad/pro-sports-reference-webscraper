@@ -1,9 +1,12 @@
+import argparse
 import pandas as pd  # type: ignore
 from bs4 import BeautifulSoup
 import requests
 import json
 from bs4.element import Tag
 from typing import Optional
+from pymongo import MongoClient
+from bson import json_util
 
 def get_soup(response: requests.Response) -> BeautifulSoup:
     return BeautifulSoup(response.text, 'html.parser')
@@ -20,7 +23,7 @@ def get_stat_value(row: Tag, stat_name: str, is_text=True) -> Optional[str]:
         print(f"'{stat_name}' not found for row.")
         return None
 
-def get_player_list(last_initial: str):
+def get_player_list(last_initial: str, mongodb_url=None):
     url = f'https://www.basketball-reference.com/players/{last_initial.lower()}/'
     page_content = get_soup(requests.get(url))
 
@@ -49,10 +52,36 @@ def get_player_list(last_initial: str):
         
         players.append(data)
 
+    db = None
+    if mongodb_url:
+        print("Storing data in mongodb...")
+        client = MongoClient(mongodb_url)
+        db = client.nba_players
+
+        for p in players:
+            print(f"Storing {p['player']}")
+            try:
+                existing_document = db.nba_players.find_one({"player": p['player']})
+            except Exception as e:
+                print(f"Error encountered accessing Mongo DB: {str(e)}")
+                existing_document = None
+
+            if existing_document:
+                print(f"Document for {p['player']} found in MongoDB:")
+                print(json.dumps(existing_document, indent=4, default=json_util.default))
+            else:
+                db.nba_players.insert_one(p)
+                print(f"Results for {p['player']} inserted into MongoDB")
+
     return players
 
-def main():
-    print(json.dumps(get_player_list('a'), indent=2, ensure_ascii=False))
+def main(mongodb_url=None):
+    plist = get_player_list('b', mongodb_url)
+    print(json.dumps(plist, indent=2, ensure_ascii=False))
 
 if __name__ == '__main__':
-    main()
+    parser = argparse.ArgumentParser(description="Basketball Reference Webscraper")
+    parser.add_argument("--mongodb-url", type=str, help="MongoDB connection string")
+
+    args = parser.parse_args()
+    main(args.mongodb_url)
