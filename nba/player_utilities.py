@@ -1,6 +1,7 @@
 import pandas as pd  # type: ignore
 from bs4 import BeautifulSoup
 import requests
+import json
 
 
 def get_soup(response: requests.Response) -> BeautifulSoup:
@@ -16,6 +17,7 @@ def get_player_list(last_initial: str):
     for row in table_rows:
         data = {}
         data['player'] = row.find('th', {'data-stat': 'player'}).text
+        data['link'] = row.find('a').get('href').replace('.html', '')
         data['year_min'] = row.find('td', {'data-stat': 'year_min'}).text
         data['year_max'] = row.find('td', {'data-stat': 'year_max'}).text
         data['pos'] = row.find('td', {'data-stat': 'pos'}).text
@@ -23,14 +25,17 @@ def get_player_list(last_initial: str):
         data['weight'] = row.find('td', {'data-stat': 'weight'}).text
         data['birth_date'] = row.find('td', {'data-stat': 'birth_date'}).text
         data['colleges'] = row.find('td', {'data-stat': 'colleges'}).text
+        try:
+            data['college_link'] = row.find('td', {'data-stat': 'colleges'}).find('a').get('href')
+        except:
+            print("No college found!")
 
         players.append(data)
 
     return players
 
 def main():
-    print(get_player_list('A'))
-    print(get_player_list('Z'))
+    print(json.dumps(get_player_list('b'), indent=2))
 
 
 if __name__ == '__main__':
