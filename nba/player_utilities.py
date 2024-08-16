@@ -7,6 +7,7 @@ from bs4.element import Tag
 from typing import Optional, List
 from pymongo import MongoClient
 from bson import json_util
+import time
 
 def get_soup(response: requests.Response) -> BeautifulSoup:
     return BeautifulSoup(response.text, 'html.parser')
@@ -65,7 +66,6 @@ def get_player_gamelog(player_link: str, season: str):
                 inactive_game.append(i)
         except:
             to_ignore.append(i)
-            print(table_rows[i])
 
     for i in range(len(table_rows)):
         if i not in to_ignore:
@@ -112,7 +112,6 @@ def get_player_gamelog(player_link: str, season: str):
 def get_player_list(last_initial: str):
     url = f'https://www.basketball-reference.com/players/{last_initial.lower()}/'
     page_soup = get_soup(requests.get(url))
-
     players = []
     table_rows = page_soup.find('tbody').find_all('tr')
     for row in table_rows:
@@ -141,12 +140,19 @@ def get_player_list(last_initial: str):
     return players
 
 def main(mongodb_url=None):
-    gamelogs = get_player_gamelog("/players/b/bryanko01", "2008")
-    print(json.dumps(gamelogs, indent=2, ensure_ascii=False))
+    all_gamelogs = []
+    for initial in range(ord('a'), ord('z')):
+        last_initial = chr(initial)
+        print(f"Processing players with last name starting with '{last_initial}'")
+        players = get_player_list(last_initial)
 
-    players = get_player_list('a')
-    print(json.dumps(players, indent=2, ensure_ascii=False))
-    
+        for player in players:
+            print(f"Processing player: {player['player']}")
+            for year in range(int(player['year_min']), int(player['year_max'])):
+                time.sleep(20)
+                gamelog = get_player_gamelog(player['link'], str(year))
+                all_gamelogs.extend(gamelog)
+
     if mongodb_url:
         print("Storing data in MongoDB...")
         collection_name = "nba_players"
@@ -156,7 +162,7 @@ def main(mongodb_url=None):
 
         collection_name = "player_gamelogs"
         unique_properties = ["player_link", "season", "game_season", "date_game"]
-        store_documents_in_mongodb(gamelogs, mongodb_url, db_name, collection_name, unique_properties)
+        store_documents_in_mongodb(all_gamelogs, mongodb_url, db_name, collection_name, unique_properties)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Basketball Reference Webscraper")
