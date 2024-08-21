@@ -141,28 +141,41 @@ def get_player_list(last_initial: str):
 
 def main(mongodb_url=None):
     all_gamelogs = []
-    for initial in range(ord('a'), ord('z')):
+    for initial in range(ord('d'), ord('z') + 1):
         last_initial = chr(initial)
         print(f"Processing players with last name starting with '{last_initial}'")
         players = get_player_list(last_initial)
 
         for player in players:
             print(f"Processing player: {player['player']}")
-            for year in range(int(player['year_min']), int(player['year_max'])):
-                time.sleep(20)
-                gamelog = get_player_gamelog(player['link'], str(year))
+            for year in range(int(player['year_min']), int(player['year_max']) + 1):
+                print(f"Processing year: {year}")
+                gamelog = []
+                try:
+                    gamelog = get_player_gamelog(player['link'], str(year))
+                except:
+                    print(f"Error encountered while getting {player['link']} game log")
+                    time.sleep(60)
+                    continue
+
                 all_gamelogs.extend(gamelog)
+                if mongodb_url:
+                    db_name = "nba_players"
+                    collection_name = "player_gamelogs"
+                    unique_properties = ["player_link", "season", "game_season", "date_game"]
+                    store_documents_in_mongodb(gamelog, mongodb_url, db_name, collection_name, unique_properties)
+                time.sleep(10)
 
-    if mongodb_url:
-        print("Storing data in MongoDB...")
-        collection_name = "nba_players"
-        db_name = collection_name
-        unique_properties = ["player", "birth_date"]  # List of properties to determine document uniqueness
-        store_documents_in_mongodb(players, mongodb_url, db_name, collection_name, unique_properties)
+    # if mongodb_url:
+    #     print("Storing data in MongoDB...")
+    #     collection_name = "nba_players"
+    #     db_name = collection_name
+    #     unique_properties = ["player", "birth_date"]  # List of properties to determine document uniqueness
+    #     store_documents_in_mongodb(players, mongodb_url, db_name, collection_name, unique_properties)
 
-        collection_name = "player_gamelogs"
-        unique_properties = ["player_link", "season", "game_season", "date_game"]
-        store_documents_in_mongodb(all_gamelogs, mongodb_url, db_name, collection_name, unique_properties)
+    #     collection_name = "player_gamelogs"
+    #     unique_properties = ["player_link", "season", "game_season", "date_game"]
+    #     store_documents_in_mongodb(all_gamelogs, mongodb_url, db_name, collection_name, unique_properties)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Basketball Reference Webscraper")
