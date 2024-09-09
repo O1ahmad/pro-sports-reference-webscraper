@@ -123,7 +123,8 @@ def get_player_list(last_initial: str):
         data['pos'] = get_stat_value(row, 'pos')
         data['height'] = get_stat_value(row, 'height')
         data['height_inches'] = convert_height_to_inches(data['height']) if data['height'] else None
-        data['weight'] = int(get_stat_value(row, 'weight'))
+        data['weight'] = get_stat_value(row, 'weight')
+        #import pdb; pdb.set_trace()
         data['birth_date'] = get_stat_value(row, 'birth_date')
         data['colleges'] = get_stat_value(row, 'colleges')
 
@@ -139,9 +140,64 @@ def get_player_list(last_initial: str):
 
     return players
 
+def find_missing_players_in_db(mongodb_url: str):
+    client = MongoClient(mongodb_url)
+    db = client["nba_players"]
+    collection = db["player_gamelogs"]
+
+    missing_players = []
+
+    # Open a log file to write missing players
+    with open("missing_players.log", "a") as log_file:
+        for initial in range(ord('a'), ord('z') + 1):
+            last_initial = chr(initial)
+            print(f"Scanning players with last name starting with '{last_initial}'")
+            log_file.write(f"Scanning players with last name starting with '{last_initial}'\n")
+
+            players = get_player_list(last_initial)
+            for player in players:
+                print(f"Checking player: {player['player']}")
+                log_file.write(f"Checking player: {player['player']}\n")
+
+                # Check for all seasons in which the player played
+                missing_years = []
+                for year in range(int(player['year_min']), int(player['year_max']) + 1):
+                    query = {
+                        "player_link": player['link'],
+                        "season": str(year)
+                    }
+
+                    existing_entry = collection.find_one(query)
+                    if not existing_entry:
+                        print(f"Player {player['player']} is missing for the season {year}")
+                        log_file.write(f"Player {player['player']} is missing for the season {year}\n")
+                        missing_years.append(year)
+
+                if missing_years:
+                    missing_players.append({
+                        "player": player['player'],
+                        "link": player['link'],
+                        "missing_years": missing_years
+                    })
+
+        if missing_players:
+            print("Players missing in the database:")
+            log_file.write("Players missing in the database:\n")
+            for player in missing_players:
+                print(f"Player: {player['player']}, Missing Years: {player['missing_years']}")
+                log_file.write(f"Player: {player['player']}, Missing Years: {player['missing_years']}\n")
+        else:
+            print("No missing players found in the database.")
+            log_file.write("No missing players found in the database.\n")
+
+    return missing_players
+
 def main(mongodb_url=None):
+    missing_players = find_missing_players_in_db(mongodb_url)
+    import pdb; pdb.set_trace()
+
     all_gamelogs = []
-    for initial in range(ord('d'), ord('z') + 1):
+    for initial in range(ord('m'), ord('q') + 1):
         last_initial = chr(initial)
         print(f"Processing players with last name starting with '{last_initial}'")
         players = get_player_list(last_initial)
@@ -166,16 +222,16 @@ def main(mongodb_url=None):
                     store_documents_in_mongodb(gamelog, mongodb_url, db_name, collection_name, unique_properties)
                 time.sleep(10)
 
-    # if mongodb_url:
-    #     print("Storing data in MongoDB...")
-    #     collection_name = "nba_players"
-    #     db_name = collection_name
-    #     unique_properties = ["player", "birth_date"]  # List of properties to determine document uniqueness
-    #     store_documents_in_mongodb(players, mongodb_url, db_name, collection_name, unique_properties)
+    if mongodb_url:
+        print("Storing data in MongoDB...")
+        collection_name = "nba_players"
+        db_name = collection_name
+        unique_properties = ["player", "birth_date"]  # List of properties to determine document uniqueness
+        store_documents_in_mongodb(players, mongodb_url, db_name, collection_name, unique_properties)
 
-    #     collection_name = "player_gamelogs"
-    #     unique_properties = ["player_link", "season", "game_season", "date_game"]
-    #     store_documents_in_mongodb(all_gamelogs, mongodb_url, db_name, collection_name, unique_properties)
+        collection_name = "player_gamelogs"
+        unique_properties = ["player_link", "season", "game_season", "date_game"]
+        store_documents_in_mongodb(all_gamelogs, mongodb_url, db_name, collection_name, unique_properties)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Basketball Reference Webscraper")
