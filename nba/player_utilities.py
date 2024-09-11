@@ -140,7 +140,7 @@ def get_player_list(last_initial: str):
 
     return players
 
-def find_missing_players_in_db(mongodb_url: str):
+def find_missing_players_in_db(mongodb_url: str, last_initial: Optional[str] = None, player_name: Optional[str] = None):
     client = MongoClient(mongodb_url)
     db = client["nba_players"]
     collection = db["player_gamelogs"]
@@ -148,41 +148,87 @@ def find_missing_players_in_db(mongodb_url: str):
     missing_players = []
 
     # Open a log file to write missing players
-    with open("missing_players.log", "a") as log_file:
-        for initial in range(ord('a'), ord('z') + 1):
-            last_initial = chr(initial)
-            print(f"Scanning players with last name starting with '{last_initial}'")
-            log_file.write(f"Scanning players with last name starting with '{last_initial}'\n")
+    with open("missing_players.log", "w") as log_file:
+        if player_name:
+            # Extract the last name initial from the player's name
+            last_name_initial = player_name.split()[-1][0].lower()
+            print(f"Searching for player: {player_name} (last name initial '{last_name_initial}')")
+            log_file.write(f"Searching for player: {player_name} (last name initial '{last_name_initial}')\n")
 
-            players = get_player_list(last_initial)
+            # Search only in the corresponding last name initial
+            players = get_player_list(last_name_initial)
+
+            # Look for the player in the current list of players
             for player in players:
-                print(f"Checking player: {player['player']}")
-                log_file.write(f"Checking player: {player['player']}\n")
+                if player['player'].lower() == player_name.lower():
+                    print(f"Found player: {player['player']}")
+                    log_file.write(f"Found player: {player['player']}\n")
 
-                # Check for all seasons in which the player played
-                missing_years = []
-                for year in range(int(player['year_min']), int(player['year_max']) + 1):
-                    query = {
-                        "player_link": player['link'],
-                        "season": str(year)
-                    }
+                    # Check for missing years for this specific player
+                    missing_years = []
+                    for year in range(int(player['year_min']), int(player['year_max']) + 1):
+                        query = {
+                            "player_link": player['link'],
+                            "season": str(year)
+                        }
+                        existing_entry = collection.find_one(query)
+                        if not existing_entry:
+                            print(f"Player {player['player']} is missing for the season {year}")
+                            log_file.write(f"Player {player['player']} is missing for the season {year}\n")
+                            missing_years.append(year)
 
-                    existing_entry = collection.find_one(query)
-                    if not existing_entry:
-                        print(f"Player {player['player']} is missing for the season {year}")
-                        log_file.write(f"Player {player['player']} is missing for the season {year}\n")
-                        missing_years.append(year)
+                    if missing_years:
+                        missing_players.append({
+                            "player": player['player'],
+                            "link": player['link'],
+                            "missing_years": missing_years
+                        })
+                    break
+            else:
+                print(f"Player {player_name} not found.")
+                log_file.write(f"Player {player_name} not found.\n")
 
-                if missing_years:
-                    missing_players.append({
-                        "player": player['player'],
-                        "link": player['link'],
-                        "missing_years": missing_years
-                    })
+        else:
+            # If a specific last initial is provided, use it; otherwise, scan A-Z
+            initials = [last_initial.lower()] if last_initial else [chr(i) for i in range(ord('a'), ord('z') + 1)]
+            
+            for initial in initials:
+                print(f"Scanning players with last name starting with '{initial}'")
+                log_file.write(f"Scanning players with last name starting with '{initial}'\n")
 
+                players = get_player_list(initial)
+
+                # Iterate through each player and check for their presence in the database
+                for player in players:
+                    print(f"Checking player: {player['player']}")
+                    log_file.write(f"Checking player: {player['player']}\n")
+
+                    # Check for all seasons in which the player played
+                    missing_years = []
+                    for year in range(int(player['year_min']), int(player['year_max']) + 1):
+                        query = {
+                            "player_link": player['link'],
+                            "season": str(year)
+                        }
+
+                        # Check if the player and season exist in the database
+                        existing_entry = collection.find_one(query)
+                        if not existing_entry:
+                            print(f"Player {player['player']} is missing for the season {year}")
+                            log_file.write(f"Player {player['player']} is missing for the season {year}\n")
+                            missing_years.append(year)
+
+                    if missing_years:
+                        missing_players.append({
+                            "player": player['player'],
+                            "link": player['link'],
+                            "missing_years": missing_years
+                        })
+
+        # Print and log missing players and their missing seasons
         if missing_players:
-            print("Players missing in the database:")
-            log_file.write("Players missing in the database:\n")
+            print(f"{len(missing_players)} players missing in the database:")
+            log_file.write(f"{len(missing_players)} players missing in the database:\n")
             for player in missing_players:
                 print(f"Player: {player['player']}, Missing Years: {player['missing_years']}")
                 log_file.write(f"Player: {player['player']}, Missing Years: {player['missing_years']}\n")
@@ -193,9 +239,6 @@ def find_missing_players_in_db(mongodb_url: str):
     return missing_players
 
 def main(mongodb_url=None):
-    missing_players = find_missing_players_in_db(mongodb_url)
-    import pdb; pdb.set_trace()
-
     all_gamelogs = []
     for initial in range(ord('m'), ord('q') + 1):
         last_initial = chr(initial)
