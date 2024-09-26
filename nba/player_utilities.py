@@ -238,9 +238,47 @@ def find_missing_players_in_db(mongodb_url: str, last_initial: Optional[str] = N
 
     return missing_players
 
+def update_player_gamelogs_with_name(client: MongoClient, player_name: str, player_link: str):
+    """
+    Update all player gamelog documents with the player's name based on matching the 'player_link' field.
+    """
+    db = client["nba_players"]
+    gamelog_collection = db["player_gamelogs"]
+
+    # Update all documents in the player_gamelogs collection where player_link matches
+    result = gamelog_collection.update_many(
+        {"player_link": player_link},
+        {"$set": {"player": player_name}}
+    )
+
+    print(f"Updated {result.modified_count} documents for player: {player_name}")
+
+def update_all_players_gamelogs(mongodb_url: str):
+    """
+    Scan all player documents in the 'nba_players' collection and update the gamelogs with the player's name.
+    """
+    client = MongoClient(mongodb_url)
+    db = client["nba_players"]
+    players_collection = db["nba_players"]
+
+    # Retrieve all players from the nba_players collection
+    players = players_collection.find({})
+
+    for player in players:
+        player_name = player.get("player")
+        player_link = player.get("link")
+
+        if player_name and player_link:
+            print(f"Updating gamelogs for player: {player_name}")
+            update_player_gamelogs_with_name(client, player_name, player_link)
+
 def main(mongodb_url=None):
+    if mongodb_url:
+        # Update all player gamelogs with player names
+        update_all_players_gamelogs(mongodb_url)
+
     all_gamelogs = []
-    for initial in range(ord('m'), ord('q') + 1):
+    for initial in range(ord('g'), ord('l') + 1):
         last_initial = chr(initial)
         print(f"Processing players with last name starting with '{last_initial}'")
         players = get_player_list(last_initial)
