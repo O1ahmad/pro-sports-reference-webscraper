@@ -62,13 +62,13 @@ Example usage:
 
 ```bash
 # Check for missing game logs for Kobe Bryant (with MongoDB)
-python script.py --mongodb-url "mongodb://localhost:27017" --check-missing-players "Kobe Bryant"
+python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --check-missing-players "Kobe Bryant"
 
 # Check for missing game logs for players whose last names start with 'b'
-python script.py --mongodb-url "mongodb://localhost:27017" --check-missing-players "b"
+python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --check-missing-players "b"
 
 # Check for missing game logs for players with last name initials from 'a' to 'c'
-python script.py --mongodb-url "mongodb://localhost:27017" --check-missing-players "a-c"
+python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --check-missing-players "a-c"
 ```
 
 ### `--add-player-gamelog-names`
@@ -82,13 +82,13 @@ Example usage:
 
 ```bash
 # Add player names to gamelogs for Kobe Bryant (with MongoDB)
-python script.py --mongodb-url "mongodb://localhost:27017" --add-player-gamelog-names "Kobe Bryant"
+python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --add-player-gamelog-names "Kobe Bryant"
 
 # Add player names to gamelogs for players whose last names start with 'b'
-python script.py --mongodb-url "mongodb://localhost:27017" --add-player-gamelog-names "b"
+python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --add-player-gamelog-names "b"
 
 # Add player names to gamelogs for players with last name initials from 'a' to 'c'
-python script.py --mongodb-url "mongodb://localhost:27017" --add-player-gamelog-names "a-c"
+python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --add-player-gamelog-names "a-c"
 ```
 
 ### `--fetch-players`
@@ -102,13 +102,13 @@ Example usage:
 
 ```bash
 # Fetch player information for Kobe Bryant (with MongoDB)
-python script.py --mongodb-url "mongodb://localhost:27017" --fetch-players "Kobe Bryant"
+python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --fetch-players "Kobe Bryant"
 
 # Fetch player information for players whose last names start with 'b'
-python script.py --mongodb-url "mongodb://localhost:27017" --fetch-players "b"
+python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --fetch-players "b"
 
 # Fetch player information for players with last name initials from 'a' to 'c'
-python script.py --mongodb-url "mongodb://localhost:27017" --fetch-players "a-c"
+python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --fetch-players "a-c"
 ```
 
 ## 📝 Contributing
