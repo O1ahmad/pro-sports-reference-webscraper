@@ -1,4 +1,4 @@
-# 🏆 League of Leagues Sports Reference Data Scrapers
+# 🏆 League of Leagues: Pro Sports Reference Data Scrapers
 
 This repository contains multiple web scraping tools for gathering player statistics and game logs from various professional sports reference websites, including:
 - 🏀 **Basketball** (NBA) - [Basketball Reference](https://www.basketball-reference.com)
