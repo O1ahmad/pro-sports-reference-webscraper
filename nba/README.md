@@ -90,8 +90,8 @@ python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --fetch
 python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --fetch-players "a-c"
 ```
 
---fetch-player-gamelogs
-Description: Fetch game logs for a specific player and optionally for a specific season. The input should be in the format player_name:season. If the season is not provided, the method will fetch all available seasons for that player. The data is fetched from MongoDB if available, otherwise, it will be scraped from the web.
+### --fetch-player-gamelogs
+Fetch game logs for a specific player and optionally for a specific season. The input should be in the format player_name:season. If the season is not provided, the method will fetch all available seasons for that player. The data is fetched from MongoDB if available, otherwise, it will be scraped from the web.
 
 Example usage:
 
