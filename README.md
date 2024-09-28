@@ -25,7 +25,7 @@ For caching and persistent storage, the scrapers support **MongoDB**. MongoDB ac
 
 ## Supported Scrapers
 
-- [Basketball (NBA)](https://github.com/O1ahmad/pro-sports-reference-webscraper/tree/main/nba): Scrape player and game statistics from Basketball Reference [Basketball (NBA)](https://github.com/O1ahmad/pro-sports-reference-webscraper/tree/main/nba).
+- [Basketball (NBA)](https://github.com/O1ahmad/pro-sports-reference-webscraper/tree/main/nba): Scrape player and game statistics from Pro Basketball Reference.
 
 ## Getting Started
 
