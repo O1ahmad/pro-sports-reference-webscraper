@@ -688,7 +688,7 @@ def get_player_gamelogs(mongodb_url: str, player_name: str, season: Optional[str
             return logs
 
 def main(mongodb_url: str,
-         check_missing_players: Optional[str] = None, 
+         check_missing_players: Optional[str] = None,
          add_player_gamelog_names: Optional[str] = None, 
          fetch_players_input: Optional[str] = None, 
          fetch_player_gamelogs: Optional[str] = None):
