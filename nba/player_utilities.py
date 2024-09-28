@@ -8,6 +8,7 @@ from typing import Optional, List
 from pymongo import MongoClient
 from bson import json_util
 import time
+import re
 
 def get_soup(response: requests.Response) -> BeautifulSoup:
     """
@@ -167,6 +168,8 @@ def get_player_gamelog(player_link: str, season: str):
 
                     log.append(data)
 
+            print(f"Processing player link: {player_link}, season: {season}")
+            time.sleep(10)
             # Return log if successful
             return log
 
@@ -359,7 +362,8 @@ def handle_missing_players(mongodb_url: str, check_missing_players: Optional[str
         mongodb_url (str): MongoDB connection string.
         check_missing_players (Optional[str]): Input string to specify the players or initials to check.
     """
-    if '-' in check_missing_players and len(check_missing_players) == 3:
+
+    if re.match(r'^([a-zA-Z])-([a-zA-Z])$', check_missing_players):
         # Handle range of initials (e.g., 'a-c')
         start, end = check_missing_players.split('-')
         initials = [chr(i) for i in range(ord(start.lower()), ord(end.lower()) + 1)]
@@ -372,13 +376,12 @@ def handle_missing_players(mongodb_url: str, check_missing_players: Optional[str
         for player_name in player_names:
             add_missing_games_to_db(mongodb_url, player_name=player_name.strip())
 
-    elif len(check_missing_players) == 1:
+    elif re.match(r'^[a-zA-Z]$', check_missing_players):
         # Handle single initial (e.g., 'b')
         add_missing_games_to_db(mongodb_url, last_initial=check_missing_players.lower())
 
-    else:
-        # Handle specific player name (e.g., 'Kobe Bryant')
-        add_missing_games_to_db(mongodb_url, player_name=check_missing_players)
+    # Handle specific player name (e.g., 'Kobe Bryant')
+    add_missing_games_to_db(mongodb_url, player_name=check_missing_players)
 
 def handle_gamelog_name_add(mongodb_url: str, players_input: Optional[str] = None):
     """
@@ -392,7 +395,7 @@ def handle_gamelog_name_add(mongodb_url: str, players_input: Optional[str] = Non
     db = client["nba_players"]
     players_collection = db["nba_players"]
 
-    if '-' in players_input and len(players_input) == 3:
+    if re.match(r'^([a-zA-Z])-([a-zA-Z])$', players_input):
         # Handle range of initials (e.g., 'a-c')
         start, end = players_input.split('-')
         initials = [chr(i) for i in range(ord(start.lower()), ord(end.lower()) + 1)]
@@ -407,15 +410,14 @@ def handle_gamelog_name_add(mongodb_url: str, players_input: Optional[str] = Non
             players = players_collection.find({"player": player_name.strip()})
             process_player_gamelogs(client, players)
 
-    elif len(players_input) == 1:
+    elif re.match(r'^[a-zA-Z]$', players_input):
         # Handle single initial (e.g., 'b')
         players = players_collection.find({"player": {"$regex": f"^{players_input}", "$options": "i"}})
         process_player_gamelogs(client, players)
 
-    else:
-        # Handle specific player name (e.g., 'Kobe Bryant')
-        players = players_collection.find({"player": players_input})
-        process_player_gamelogs(client, players)
+    # Handle specific player name (e.g., 'Kobe Bryant')
+    players = players_collection.find({"player": players_input})
+    process_player_gamelogs(client, players)
 
 def process_player_gamelogs(client: MongoClient, player_data: List[dict]):
     """
@@ -464,7 +466,7 @@ def get_player_list(players_input: str, mongodb_url: Optional[str] = None) -> Li
     base_url = 'https://www.basketball-reference.com/players/'
     players = []
 
-    if '-' in players_input and len(players_input) == 3:
+    if re.match(r'^([a-zA-Z])-([a-zA-Z])$', players_input):
         # Handle range of initials (e.g., 'a-c')
         start, end = players_input.split('-')
         initials = [chr(i) for i in range(ord(start.lower()), ord(end.lower()) + 1)]
@@ -472,7 +474,7 @@ def get_player_list(players_input: str, mongodb_url: Optional[str] = None) -> Li
         # Handle comma-separated list of player names (e.g., 'Kobe Bryant, Paul Pierce')
         player_names = players_input.split(',')
         return fetch_players_by_name(player_names, mongodb_url)
-    elif len(players_input) == 1:
+    elif re.match(r'^[a-zA-Z]$', players_input):
         # Handle single initial (e.g., 'b')
         initials = [players_input.lower()]
     else:
@@ -509,7 +511,7 @@ def fetch_players_by_name(player_names: List[str], mongodb_url: Optional[str] = 
 
             for player_name in player_names:
                 # Use a regex to match player names even if the MongoDB entry contains extra characters like an asterisk
-                mongo_players = list(players_collection.find({"player": {"$regex": f"^{player_name.strip()}", "$options": "i"}}))
+                mongo_players = list(players_collection.find({"player": {"$regex": f"^{player_name.strip()}", "$options": "i"}}, {"_id": 0}))
                 if mongo_players:
                     print(f"Player '{player_name.strip()}' found in MongoDB")
                     players.extend(mongo_players)
@@ -583,7 +585,7 @@ def fetch_players_by_initial(url: str, initial: str, mongodb_url: Optional[str] 
             db = client["nba_players"]
             players_collection = db["nba_players"]
 
-            mongo_players = list(players_collection.find({"player": {"$regex": f"^{initial}", "$options": "i"}}))
+            mongo_players = list(players_collection.find({"player": {"$regex": f"^{initial}", "$options": "i"}}, {"_id": 0}))
             if mongo_players:
                 print(f"Players found in MongoDB for initial '{initial}': {len(mongo_players)}")
                 return mongo_players  # Return the players from MongoDB if found
@@ -628,7 +630,68 @@ def fetch_players_by_initial(url: str, initial: str, mongodb_url: Optional[str] 
         print(f"Error encountered while fetching {url}: {e}")
         return []
 
-def main(mongodb_url: str, check_missing_players: Optional[str] = None, add_player_gamelog_names: Optional[str] = None, fetch_players_input: Optional[str] = None):
+def get_player_gamelogs(mongodb_url: str, player_name: str, season: Optional[str] = None) -> List[dict]:
+    """
+    Retrieves player game logs from MongoDB if available, otherwise scrapes the data using the get_player_gamelog method.
+
+    Args:
+        mongodb_url (str): MongoDB connection string.
+        player_name (str): The player's name.
+        season (Optional[str]): The season to retrieve game logs for. If not provided, fetches all available seasons.
+
+    Returns:
+        List[dict]: A list of dictionaries containing game log data.
+    """
+    client = MongoClient(mongodb_url)
+    db = client["nba_players"]
+    gamelog_collection = db["player_gamelogs"]
+
+    # Try to find the player's game logs in MongoDB
+    query = {"player": {"$regex": f"^{player_name}", "$options": "i"}}
+    if season:
+        query["season"] = season
+
+    player_logs = list(gamelog_collection.find(query, {"_id": 0}))
+
+    if player_logs:
+        print(f"Game logs found in MongoDB for player {player_name} in season {season if season else 'all seasons'}")
+        return player_logs
+    else:
+        print(f"No game logs found in MongoDB for player {player_name}. Scraping data...")
+
+        # Get player details from MongoDB (to retrieve the player_link for scraping)
+        players_collection = db["nba_players"]
+        player_doc = players_collection.find_one({"player": {"$regex": f"^{player_name}", "$options": "i"}})
+
+        if not player_doc:
+            print(f"Player {player_name} not found in the database.")
+            return []
+
+        player_link = player_doc.get("link")
+        if not player_link:
+            print(f"Player link not found for {player_name}.")
+            return []
+
+        # Scrape the data using get_player_gamelog if no data is found in MongoDB
+        if season:
+            logs = get_player_gamelog(player_link, season)
+            # Store the scraped data into MongoDB for future use
+            store_documents_in_mongodb(logs, mongodb_url, "nba_players", "player_gamelogs", ["player_link", "season", "game_season", "date_game"])
+            return logs
+        else:
+            # If no season is provided, fetch all seasons the player played
+            logs = []
+            for year in range(int(player_doc['year_min']), int(player_doc['year_max']) + 1):
+                logs_for_season = get_player_gamelog(player_link, str(year))
+                store_documents_in_mongodb(logs_for_season, mongodb_url, "nba_players", "player_gamelogs", ["player_link", "season", "game_season", "date_game"])
+                logs.extend(logs_for_season)
+            return logs
+
+def main(mongodb_url: str,
+         check_missing_players: Optional[str] = None, 
+         add_player_gamelog_names: Optional[str] = None, 
+         fetch_players_input: Optional[str] = None, 
+         fetch_player_gamelogs: Optional[str] = None):
     """
     Main entry point for the script. Delegates to different functions based on the input.
 
@@ -637,6 +700,7 @@ def main(mongodb_url: str, check_missing_players: Optional[str] = None, add_play
         check_missing_players (Optional[str]): Input string to specify the players or initials to check for missing game logs.
         add_player_gamelog_names (Optional[str]): Input string to specify the players or initials to update gamelogs with player names.
         fetch_players_input (Optional[str]): Input string to specify the players or initials to fetch.
+        fetch_player_gamelogs (Optional[str]): Input string to specify the player and optional season (e.g., 'Kobe Bryant:2009').
     """
     if check_missing_players:
         handle_missing_players(mongodb_url, check_missing_players)
@@ -646,8 +710,17 @@ def main(mongodb_url: str, check_missing_players: Optional[str] = None, add_play
 
     if fetch_players_input:
         players = get_player_list(fetch_players_input, mongodb_url)
-        # You can now use the fetched player list for further processing, such as displaying or storing them
         print(players)
+
+    if fetch_player_gamelogs:
+        # Parse player name and season if provided, separated by ":"
+        parts = [part.strip() for part in fetch_player_gamelogs.split(':')]
+        player_name = parts[0]
+        season = parts[1] if len(parts) > 1 else None
+
+        # Fetch player logs for the given player and optional season
+        player_logs = get_player_gamelogs(mongodb_url, player_name, season)
+        print(player_logs)
 
 
 if __name__ == '__main__':
@@ -656,7 +729,11 @@ if __name__ == '__main__':
     parser.add_argument("--check-missing-players", type=str, help="Check and update missing game logs for a player (e.g. 'Kobe Bryant', 'a-c', 'b', 'Kobe Bryant,Paul Pierce')")
     parser.add_argument("--add-player-gamelog-names", type=str, help="Add player names to gamelogs based on initials or player names (e.g. 'Kobe Bryant', 'a-c', 'b', 'Kobe Bryant, Paul Pierce')")
     parser.add_argument("--fetch-players", type=str, help="Fetch player information based on a name, list of names, initials, or a range of initials (e.g. 'Kobe Bryant', 'a-c', 'b')")
+    parser.add_argument("--fetch-player-gamelogs", type=str, help="Fetch player game logs for the specified player and optional season (e.g., 'Kobe Bryant:2009')")
 
     args = parser.parse_args()
-    main(args.mongodb_url, args.check_missing_players, args.add_player_gamelog_names, args.fetch_players)
-
+    main(args.mongodb_url, 
+         args.check_missing_players, 
+         args.add_player_gamelog_names, 
+         args.fetch_players, 
+         args.fetch_player_gamelogs)
