@@ -80,14 +80,14 @@ Fetches player information from Basketball Reference based on the input. This fl
 Example usage:
 
 ```bash
-# Fetch player information for Kobe Bryant (with MongoDB)
-python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --fetch-players "Kobe Bryant"
+# Fetch player information for Paul Pierce (with MongoDB)
+python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --fetch-players "Paul Pierce"
 
-# Fetch player information for players whose last names start with 'b'
-python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --fetch-players "b"
+# Fetch player information for players whose last names start with 'p'
+python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --fetch-players "p"
 
-# Fetch player information for players with last name initials from 'a' to 'c'
-python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --fetch-players "a-c"
+# Fetch player information for players with last name initials from 'm' to 'z'
+python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --fetch-players "m-z"
 ```
 
 ### --fetch-player-gamelogs
@@ -97,12 +97,12 @@ Example usage:
 
 ```bash
 # Game logs for a single season
-python nba/player_utilities.py --mongodb-url <mongo-url> --fetch-player-gamelogs "Kobe Bryant:2002" # With a season:
+python nba/player_utilities.py --mongodb-url <mongo-url> --fetch-player-gamelogs "Kevin Garnett:2002" # With a season:
 ```
 
 ```bash
 # Game log for all seasons
-python nba/player_utilities.py --mongodb-url <mongo-url> --fetch-player-gamelogs "Kobe Bryant" # Without a season:
+python nba/player_utilities.py --mongodb-url <mongo-url> --fetch-player-gamelogs "Amen Thompson" # Without a season:
 ```
 
 ## 📝 Contributing
