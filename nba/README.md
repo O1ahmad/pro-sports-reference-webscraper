@@ -9,7 +9,6 @@ MongoDB is **not required for all operations**; it serves as a caching and persi
 The purpose of this tool is to automate the extraction and organization of NBA player data from Basketball Reference. It supports the following actions:
 - Fetches player information based on initials or full names.
 - Checks if player game logs are missing in the MongoDB database.
-- Adds player names to game logs stored in MongoDB by matching player links.
 - Can function without MongoDB by directly scraping data from Basketball Reference.
 
 ## 🚀 How to Run the Application
@@ -42,7 +41,7 @@ If you choose not to use MongoDB, the application will scrape the requested data
 
 The application provides several functionalities, each triggered using different flags. See the examples below for usage.
 
-## 🎛️ Flags and Usage Examples
+## Flags and Usage Examples
 
 ### `--mongodb-url` (Optional)
 This flag specifies the MongoDB connection string. If not provided, the application will fallback to querying data from Basketball Reference directly. Use this flag if you want to cache data in MongoDB for faster future queries.
@@ -69,26 +68,6 @@ python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --check
 
 # Check for missing game logs for players with last name initials from 'a' to 'c'
 python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --check-missing-players "a-c"
-```
-
-### `--add-player-gamelog-names`
-Adds the player names to the gamelog entries in MongoDB (if provided). You can input:
-- A **single player name** (e.g., `"Kobe Bryant"`).
-- A **comma-separated list** of player names (e.g., `"Kobe Bryant, Paul Pierce"`).
-- A **single last name initial** (e.g., `"b"`).
-- A **range of last name initials** (e.g., `"a-c"`).
-
-Example usage:
-
-```bash
-# Add player names to gamelogs for Kobe Bryant (with MongoDB)
-python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --add-player-gamelog-names "Kobe Bryant"
-
-# Add player names to gamelogs for players whose last names start with 'b'
-python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --add-player-gamelog-names "b"
-
-# Add player names to gamelogs for players with last name initials from 'a' to 'c'
-python nba/player_utilities.py --mongodb-url "mongodb://localhost:27017" --add-player-gamelog-names "a-c"
 ```
 
 ### `--fetch-players`
