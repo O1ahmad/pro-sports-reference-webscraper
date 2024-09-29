@@ -93,7 +93,7 @@ def store_documents_in_mongodb(documents: list, mongodb_url: str, db_name: str, 
             collection.insert_one(document)
             print(f"Document with unique properties {query} inserted into MongoDB")
 
-def get_player_gamelog(player_link: str, season: str):
+def get_player_gamelog(player_name: str, player_link: str, season: str):
     """
     Fetches player game logs from Basketball Reference for a given season. Retries on failure.
     
@@ -131,6 +131,7 @@ def get_player_gamelog(player_link: str, season: str):
             for i in range(len(table_rows)):
                 if i not in to_ignore:
                     data = {}
+                    data['player'] = player_name
                     data['player_link'] = player_link
                     data['season'] = season
                     data['game_season'] = get_stat_value(table_rows[i], 'game_season')
@@ -169,13 +170,14 @@ def get_player_gamelog(player_link: str, season: str):
                     log.append(data)
 
             print(f"Processing player link: {player_link}, season: {season}")
-            time.sleep(10)
+            time.sleep(5)
             # Return log if successful
             return log
 
         except Exception as e:
             # Print error and retry after 10 seconds
             print(f"Error encountered while fetching {url}: {e}")
+            time.sleep(1800)
 
 def get_player_list(last_initial: str):
     """
@@ -265,7 +267,7 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
 
                     for year in range(int(player['year_min']), int(player['year_max']) + 1):
                         season = str(year)
-                        web_gamelogs = get_player_gamelog(player['link'], season)
+                        web_gamelogs = get_player_gamelog(player['player'], player['link'], season)
                         db_gamelogs = list(collection.find({"player_link": player['link'], "season": season}))
                         db_game_dates = {entry['date_game'] for entry in db_gamelogs if 'date_game' in entry}
 
@@ -313,7 +315,7 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
 
                     for year in range(int(player['year_min']), int(player['year_max']) + 1):
                         season = str(year)
-                        web_gamelogs = get_player_gamelog(player['link'], season)
+                        web_gamelogs = get_player_gamelog(player['player'], player['link'], season)
                         db_gamelogs = list(collection.find({"player_link": player['link'], "season": season}))
                         db_game_dates = {entry['date_game'] for entry in db_gamelogs if 'date_game' in entry}
 
@@ -433,7 +435,6 @@ def process_player_gamelogs(client: MongoClient, player_data: List[dict]):
     for player in player_data:
         player_name = player.get("player")
         player_link = player.get("link")
-
         if player_name and player_link:
             # Remove asterisk from the player's name if present
             cleaned_player_name = player_name.replace('*', '').strip()
@@ -674,7 +675,7 @@ def get_player_gamelogs(mongodb_url: str, player_name: str, season: Optional[str
 
         # Scrape the data using get_player_gamelog if no data is found in MongoDB
         if season:
-            logs = get_player_gamelog(player_link, season)
+            logs = get_player_gamelog(player_name, player_link, season)
             # Store the scraped data into MongoDB for future use
             store_documents_in_mongodb(logs, mongodb_url, "nba_players", "player_gamelogs", ["player_link", "season", "game_season", "date_game"])
             return logs
@@ -682,7 +683,7 @@ def get_player_gamelogs(mongodb_url: str, player_name: str, season: Optional[str
             # If no season is provided, fetch all seasons the player played
             logs = []
             for year in range(int(player_doc['year_min']), int(player_doc['year_max']) + 1):
-                logs_for_season = get_player_gamelog(player_link, str(year))
+                logs_for_season = get_player_gamelog(player_name, player_link, str(year))
                 store_documents_in_mongodb(logs_for_season, mongodb_url, "nba_players", "player_gamelogs", ["player_link", "season", "game_season", "date_game"])
                 logs.extend(logs_for_season)
             return logs
