@@ -243,7 +243,6 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
     client = MongoClient(mongodb_url)
     db = client["nba_players"]
     collection = db["player_gamelogs"]
-
     missing_games = []
 
     with open("missed_games.log", "a") as log_file:
@@ -274,11 +273,6 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
                             if game['date_game'] not in db_game_dates:
                                 log_file.write(f"Missing game: Player: {player['player']}, Season: {season}, Date: {game['date_game']}\n")
                                 missing_games.append(game)
-
-                        # Insert missing games into the MongoDB collection
-                        if missing_games:
-                            store_documents_in_mongodb(missing_games, mongodb_url, "nba_players", "player_gamelogs", ["player_link", "season", "game_season", "date_game"])
-                            print(f"Added {len(missing_games)} missing games for player {player_name} to MongoDB.")
                     
                     # Output total games found in MongoDB and on the web
                     print(f"Total number of games found in MongoDB for player {player_name}: {total_games_in_db}")
@@ -292,6 +286,11 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
                         print(f"Total missing games for player {player_name}: {total_missing_games}")
                         log_file.write(f"Total missing games for player {player_name}: {total_missing_games}\n")
 
+                    # Insert missing games into the MongoDB collection
+                    if missing_games:
+                        store_documents_in_mongodb(missing_games, mongodb_url, "nba_players", "player_gamelogs", ["player", "season", "date_game"])
+                        print(f"Added {len(missing_games)} missing games for player {player_name} to MongoDB.")
+                        missing_games = []
                     if not missing_games:
                         log_file.write(f"No missing games found for player: {player_name}\n")
                     break
@@ -323,11 +322,6 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
                                 log_file.write(f"Missing game: Player: {player['player']}, Season: {season}, Date: {game['date_game']}\n")
                                 missing_games.append(game)
 
-                        # Insert missing games into the MongoDB collection
-                        if missing_games:
-                            store_documents_in_mongodb(missing_games, mongodb_url, "nba_players", "player_gamelogs", ["player_link", "season", "game_season", "date_game"])
-                            print(f"Added {len(missing_games)} missing games for players with last name starting with '{initial.upper()}' to MongoDB.")
-
                     # Output total games found in MongoDB and on the web
                     print(f"Total number of games found in MongoDB for player '{player['player']}': {total_games_in_db}")
                     print(f"Total number of games found on the web for player '{player['player']}': {total_games_on_web}")
@@ -338,10 +332,16 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
                     if total_games_in_db != total_games_on_web:
                         total_missing_games = total_games_on_web - total_games_in_db
                         print(f"Total missing games for player '{player['player']}': {total_missing_games}")
+                        print(f"Missing games count: {len(missing_games)}")
                         log_file.write(f"Total missing games for player '{player['player']}': {total_missing_games}\n")
 
-                if not missing_games:
-                    log_file.write(f"No missing games found for players with last name starting with '{initial.upper()}'\n")
+                # Insert missing games into the MongoDB collection
+                if missing_games:
+                    store_documents_in_mongodb(missing_games, mongodb_url, "nba_players", "player_gamelogs", ["player", "season", "date_game"])
+                    print(f"Added {len(missing_games)} missing games for players: '{player['player']}' to MongoDB.")
+                else:
+                    print(f"No missing games found for player: {player['player']}\n")
+                    log_file.write(f"No missing games found for player: {player['player']}\n")
 
     if missing_games:
         print(f"Total missing games: {len(missing_games)}")
