@@ -338,16 +338,11 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
                         log_file.write(f"Total missing games for player {player_name}: {total_missing_games}\n")
                         print(f"Missing games count: {len(missing_games)}")
                         store_documents_in_mongodb(missing_games, mongodb_url, "nba_players", "player_gamelogs", ["player", "season", "date_game"])
-                        print(f"Added {len(missing_games)} missing games for players: '{player['player']}' to MongoDB.")
+                        print(f"Added {len(missing_games)} missing games for player: '{player['player']}' to MongoDB.")
                         missing_games.clear()
                     else:
                         print(f"No missing games found for player: {player['player']}\n")
                         log_file.write(f"No missing games found for player: {player['player']}\n")
-
-    if missing_games:
-        print(f"Total missing games: {len(missing_games)}")
-    else:
-        print("No missing games found.")
 
     return missing_games
 
