@@ -122,7 +122,7 @@ def get_player_gamelog(player_name: str, player_link: str, season: str):
             elements = table_rows[i].find_all('td')
             try:
                 x = elements[len(elements) - 1].text
-                if x == 'Not With Team' or x == 'Did Not Dress' or x == 'Inactive' or x == 'Injured Reserve':
+                if x == 'Injured Reserve' or x == 'Not With Team' or x == 'Did Not Dress' or x == 'Inactive' or x == 'Did Not Play':
                     inactive_game.append(i)
             except:
                 to_ignore.append(i)
