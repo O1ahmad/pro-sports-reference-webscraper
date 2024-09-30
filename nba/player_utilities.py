@@ -107,77 +107,75 @@ def get_player_gamelog(player_name: str, player_link: str, season: str):
     url = f'https://www.basketball-reference.com{player_link}/gamelog/{season}'
     log = []
 
-    while True:
-        try:
-            # Fetch the page and parse with BeautifulSoup
-            response = requests.get(url)
-            page_soup = get_soup(response)
+    try:
+        # Fetch the page and parse with BeautifulSoup
+        response = requests.get(url)
+        page_soup = get_soup(response)
 
-            # Find game log table rows
-            table_rows = page_soup.find('tbody').find_all('tr')
+        # Find game log table rows
+        table_rows = page_soup.find('tbody').find_all('tr')
 
-            # Handle inactive or DNP games
-            inactive_game = []
-            to_ignore = []
-            for i in range(len(table_rows)):
-                elements = table_rows[i].find_all('td')
-                try:
-                    x = elements[len(elements) - 1].text
-                    if x == 'Not With Team' or x == 'Did Not Dress' or x == 'Inactive' or x == 'Injured Reserve':
-                        inactive_game.append(i)
-                except:
-                    to_ignore.append(i)
+        # Handle inactive or DNP games
+        inactive_game = []
+        to_ignore = []
+        for i in range(len(table_rows)):
+            elements = table_rows[i].find_all('td')
+            try:
+                x = elements[len(elements) - 1].text
+                if x == 'Not With Team' or x == 'Did Not Dress' or x == 'Inactive' or x == 'Injured Reserve':
+                    inactive_game.append(i)
+            except:
+                to_ignore.append(i)
 
-            for i in range(len(table_rows)):
-                if i not in to_ignore:
-                    data = {}
-                    data['player'] = player_name
-                    data['player_link'] = player_link
-                    data['season'] = season
-                    data['game_season'] = get_stat_value(table_rows[i], 'game_season')
-                    data['date_game'] = get_stat_value(table_rows[i], 'date_game')
-                    data['age'] = get_stat_value(table_rows[i], 'age')
-                    data['team_id'] = get_stat_value(table_rows[i], 'team_id')
-                    data['game_location'] = get_stat_value(table_rows[i], 'game_location')
-                    data['opp_id'] = get_stat_value(table_rows[i], 'opp_id')
-                    data['game_result'] = get_stat_value(table_rows[i], 'game_result')
-                    if i not in inactive_game:
-                        data['games_started'] = get_stat_value(table_rows[i], 'gs')
-                        data['minutes_played'] = get_stat_value(table_rows[i], 'mp')
-                        data['field_goals'] = get_stat_value(table_rows[i], 'fg')
-                        data['field_goals_attempted'] = get_stat_value(table_rows[i], 'fga')
-                        data['field_goal_percentage'] = get_stat_value(table_rows[i], 'fg_pct')
-                        data['3point_field_goals'] = get_stat_value(table_rows[i], 'fg3')
-                        data['3point_field_goals_attempted'] = get_stat_value(table_rows[i], 'fg3a')
-                        data['3point_field_goal_percentage'] = get_stat_value(table_rows[i], 'fg3_pct')
-                        data['free_throws'] = get_stat_value(table_rows[i], 'ft')
-                        data['free_throws_attempted'] = get_stat_value(table_rows[i], 'fta')
-                        data['free_throw_percentage'] = get_stat_value(table_rows[i], 'ft_pct')
-                        data['offensive_rebounds'] = get_stat_value(table_rows[i], 'orb')
-                        data['defensive_rebounds'] = get_stat_value(table_rows[i], 'drb')
-                        data['total_rebounds'] = get_stat_value(table_rows[i], 'trb')
-                        data['assists'] = get_stat_value(table_rows[i], 'ast')
-                        data['steals'] = get_stat_value(table_rows[i], 'stl')
-                        data['blocks'] = get_stat_value(table_rows[i], 'blk')
-                        data['turnovers'] = get_stat_value(table_rows[i], 'tov')
-                        data['personal_fouls'] = get_stat_value(table_rows[i], 'pf')
-                        data['points'] = get_stat_value(table_rows[i], 'pts')
-                        data['game_score'] = get_stat_value(table_rows[i], 'game_score')
-                        data['plus_minus'] = get_stat_value(table_rows[i], 'plus_minus')
-                    else:
-                        data['status'] = "Inactive"
+        for i in range(len(table_rows)):
+            if i not in to_ignore:
+                data = {}
+                data['player'] = player_name
+                data['player_link'] = player_link
+                data['season'] = season
+                data['game_season'] = get_stat_value(table_rows[i], 'game_season')
+                data['date_game'] = get_stat_value(table_rows[i], 'date_game')
+                data['age'] = get_stat_value(table_rows[i], 'age')
+                data['team_id'] = get_stat_value(table_rows[i], 'team_id')
+                data['game_location'] = get_stat_value(table_rows[i], 'game_location')
+                data['opp_id'] = get_stat_value(table_rows[i], 'opp_id')
+                data['game_result'] = get_stat_value(table_rows[i], 'game_result')
+                if i not in inactive_game:
+                    data['games_started'] = get_stat_value(table_rows[i], 'gs')
+                    data['minutes_played'] = get_stat_value(table_rows[i], 'mp')
+                    data['field_goals'] = get_stat_value(table_rows[i], 'fg')
+                    data['field_goals_attempted'] = get_stat_value(table_rows[i], 'fga')
+                    data['field_goal_percentage'] = get_stat_value(table_rows[i], 'fg_pct')
+                    data['3point_field_goals'] = get_stat_value(table_rows[i], 'fg3')
+                    data['3point_field_goals_attempted'] = get_stat_value(table_rows[i], 'fg3a')
+                    data['3point_field_goal_percentage'] = get_stat_value(table_rows[i], 'fg3_pct')
+                    data['free_throws'] = get_stat_value(table_rows[i], 'ft')
+                    data['free_throws_attempted'] = get_stat_value(table_rows[i], 'fta')
+                    data['free_throw_percentage'] = get_stat_value(table_rows[i], 'ft_pct')
+                    data['offensive_rebounds'] = get_stat_value(table_rows[i], 'orb')
+                    data['defensive_rebounds'] = get_stat_value(table_rows[i], 'drb')
+                    data['total_rebounds'] = get_stat_value(table_rows[i], 'trb')
+                    data['assists'] = get_stat_value(table_rows[i], 'ast')
+                    data['steals'] = get_stat_value(table_rows[i], 'stl')
+                    data['blocks'] = get_stat_value(table_rows[i], 'blk')
+                    data['turnovers'] = get_stat_value(table_rows[i], 'tov')
+                    data['personal_fouls'] = get_stat_value(table_rows[i], 'pf')
+                    data['points'] = get_stat_value(table_rows[i], 'pts')
+                    data['game_score'] = get_stat_value(table_rows[i], 'game_score')
+                    data['plus_minus'] = get_stat_value(table_rows[i], 'plus_minus')
+                else:
+                    data['status'] = "Inactive"
 
-                    log.append(data)
+                log.append(data)
 
-            print(f"Processing player link: {player_link}, season: {season}")
-            time.sleep(5)
-            # Return log if successful
-            return log
+        print(f"Processing player link: {player_link}, season: {season}")
+        time.sleep(5)
 
-        except Exception as e:
-            # Print error and retry after 10 seconds
-            print(f"Error encountered while fetching {url}: {e}")
-            time.sleep(1800)
+    except Exception as e:
+        # Print error and retry after 10 seconds
+        print(f"Error encountered while fetching {url}: {e}")
+
+    return log
 
 def get_player_list(last_initial: str):
     """
@@ -193,45 +191,43 @@ def get_player_list(last_initial: str):
     url = f'https://www.basketball-reference.com/players/{last_initial.lower()}/'
     players = []
 
-    while True:
-        try:
-            # Fetch the page and parse with BeautifulSoup
-            response = requests.get(url)
-            page_soup = get_soup(response)
+    try:
+        # Fetch the page and parse with BeautifulSoup
+        response = requests.get(url)
+        page_soup = get_soup(response)
 
-            # Find player table rows
-            table_rows = page_soup.find('tbody').find_all('tr')
-            
-            # Extract player data
-            for row in table_rows:
-                data = {}
-                data['player'] = row.find('th', {'data-stat': 'player'}).text.encode('latin1').decode('utf-8')
-                data['link'] = row.find('a').get('href').replace('.html', '')
-                data['year_min'] = get_stat_value(row, 'year_min')
-                data['year_max'] = get_stat_value(row, 'year_max')
-                data['pos'] = get_stat_value(row, 'pos')
-                data['height'] = get_stat_value(row, 'height')
-                data['height_inches'] = convert_height_to_inches(data['height']) if data['height'] else None
-                data['weight'] = get_stat_value(row, 'weight')
-                data['birth_date'] = get_stat_value(row, 'birth_date')
-                data['colleges'] = get_stat_value(row, 'colleges')
+        # Find player table rows
+        table_rows = page_soup.find('tbody').find_all('tr')
 
-                # Try to get the college link if it exists
-                college_element = get_stat_value(row, 'colleges', is_text=False)
-                if college_element:
-                    try:
-                        data['college_link'] = college_element.find('a').get('href')
-                    except AttributeError:
-                        print(f"College link not found for {data['player']}")
+        # Extract player data
+        for row in table_rows:
+            data = {}
+            data['player'] = row.find('th', {'data-stat': 'player'}).text.encode('latin1').decode('utf-8')
+            data['link'] = row.find('a').get('href').replace('.html', '')
+            data['year_min'] = get_stat_value(row, 'year_min')
+            data['year_max'] = get_stat_value(row, 'year_max')
+            data['pos'] = get_stat_value(row, 'pos')
+            data['height'] = get_stat_value(row, 'height')
+            data['height_inches'] = convert_height_to_inches(data['height']) if data['height'] else None
+            data['weight'] = get_stat_value(row, 'weight')
+            data['birth_date'] = get_stat_value(row, 'birth_date')
+            data['colleges'] = get_stat_value(row, 'colleges')
 
-                players.append(data)
+            # Try to get the college link if it exists
+            college_element = get_stat_value(row, 'colleges', is_text=False)
+            if college_element:
+                try:
+                    data['college_link'] = college_element.find('a').get('href')
+                except AttributeError:
+                    print(f"College link not found for {data['player']}")
 
-            # Return players if successful
-            return players
+            players.append(data)
 
-        except Exception as e:
-            # Print error and retry after 10 seconds
+    except Exception as e:
+        # Print error and retry after 10 seconds
             print(f"Error encountered while fetching {url}: {e}")
+
+    return players
 
 def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None, last_initial: Optional[str] = None):
     """
