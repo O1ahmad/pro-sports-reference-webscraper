@@ -1,0 +1,27 @@
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore virtual environments
+venv/
+.env/
+*.env
+
+# Ignore development and deployment artifacts
+*.log
+*.sqlite3
+*.db
+
+# Ignore Dockerfile and .dockerignore (not needed in the image)
+Dockerfile
+.dockerignore
+
+# Ignore any IDE/editor config files (optional)
+.vscode/
+.idea/
+
+# Ignore Git repository and version control artifacts
+.git/
+.gitignore
+
