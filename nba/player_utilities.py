@@ -718,7 +718,7 @@ def main(mongodb_url: str,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Basketball Reference Webscraper")
-    parser.add_argument("--mongodb-url", type=str, required=True, help="MongoDB connection string")
+    parser.add_argument("--mongodb-url", type=str, help="MongoDB connection string")
     parser.add_argument("--check-missing-players", type=str, help="Check and update missing game logs for a player (e.g. 'Kobe Bryant', 'a-c', 'b', 'Kobe Bryant,Paul Pierce')")
     parser.add_argument("--add-player-gamelog-names", type=str, help="Add player names to gamelogs based on initials or player names (e.g. 'Kobe Bryant', 'a-c', 'b', 'Kobe Bryant, Paul Pierce')")
     parser.add_argument("--fetch-players", type=str, help="Fetch player information based on a name, list of names, initials, or a range of initials (e.g. 'Kobe Bryant', 'a-c', 'b')")
