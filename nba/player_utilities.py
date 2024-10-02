@@ -10,6 +10,8 @@ from bson import json_util
 import time
 import re
 
+### Utility Methods ###
+
 def get_soup(response: requests.Response) -> BeautifulSoup:
     """
     Parses an HTTP response into a BeautifulSoup object.
@@ -92,6 +94,8 @@ def store_documents_in_mongodb(documents: list, mongodb_url: str, db_name: str, 
         else:
             collection.insert_one(document)
             print(f"Document with unique properties {query} inserted into MongoDB")
+
+### Webscraping Methods ###
 
 def get_player_gamelog(player_name: str, player_link: str, season: str):
     """
@@ -177,7 +181,7 @@ def get_player_gamelog(player_name: str, player_link: str, season: str):
 
     return log
 
-def get_player_list(last_initial: str):
+def fetch_player_list(last_initial: str):
     """
     Fetches the list of players whose last names start with the specified initial from Basketball Reference.
     Retries on failure.
@@ -229,6 +233,8 @@ def get_player_list(last_initial: str):
 
     return players
 
+### Database Helper Methods ###
+
 def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None, last_initial: Optional[str] = None):
     """
     Find and log missing game entries for players by comparing website data and MongoDB data. If missing game logs
@@ -250,7 +256,7 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
             last_name_initial = player_name.split()[-1][0].lower()
             print(f"Searching for player: {player_name} (last name initial '{last_name_initial}')")
             log_file.write(f"Searching for player: {player_name} (last name initial '{last_name_initial}')\n")
-            players = get_player_list(last_name_initial)
+            players = fetch_player_list(last_name_initial)
 
             for player in players:
                 if player['player'].lower() == player_name.lower():
@@ -284,12 +290,12 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
                     if total_games_in_db != total_games_on_web:
                         total_missing_games = total_games_on_web - total_games_in_db
                         if total_missing_games != len(missing_games):
-                            print("ERROR: total missing games do NOT match!")
+                            print("ERROR: total missing games counts do NOT match!")
                         print(f"Total missing games for player '{player['player']}': {total_missing_games}")
                         log_file.write(f"Total missing games for player {player_name}: {total_missing_games}\n")
                         print(f"Missing games count: {len(missing_games)}")
                         store_documents_in_mongodb(missing_games, mongodb_url, "nba_players", "player_gamelogs", ["player", "season", "date_game"])
-                        print(f"Added {len(missing_games)} missing games for players: '{player['player']}' to MongoDB.")
+                        print(f"Added {len(missing_games)} missing games for player '{player['player']}' to MongoDB.")
                         missing_games.clear()
                     else:
                         print(f"No missing games found for player: {player['player']}\n")
@@ -303,7 +309,7 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
 
             for initial in initials:
                 print(f"Scanning players with last name starting with '{initial.upper()}'")
-                players = get_player_list(initial)
+                players = fetch_player_list(initial)
 
                 for player in players:
                     total_games_in_db = 0  # Counter for the total number of games found in MongoDB
@@ -441,7 +447,9 @@ def process_player_gamelogs(client: MongoClient, player_data: List[dict]):
 
             print(f"Updated {result.modified_count} documents for player: {cleaned_player_name}")
 
-def get_player_list(players_input: str, mongodb_url: Optional[str] = None) -> List[dict]:
+### Data Fetch Methods ###
+
+def fetch_player_list(players_input: str, mongodb_url: Optional[str] = None) -> List[dict]:
     """
     Fetches the list of players based on input. The input can be:
     - A single player name
@@ -623,7 +631,7 @@ def fetch_players_by_initial(url: str, initial: str, mongodb_url: Optional[str] 
         print(f"Error encountered while fetching {url}: {e}")
         return []
 
-def get_player_gamelogs(mongodb_url: str, player_name: str, season: Optional[str] = None) -> List[dict]:
+def fetch_player_gamelogs(mongodb_url: str, player_name: str, season: Optional[str] = None) -> List[dict]:
     """
     Retrieves player game logs from MongoDB if available, otherwise scrapes the data using the get_player_gamelog method.
 
@@ -680,6 +688,8 @@ def get_player_gamelogs(mongodb_url: str, player_name: str, season: Optional[str
                 logs.extend(logs_for_season)
             return logs
 
+### Main Entrypoint ###
+
 def main(mongodb_url: str,
          check_missing_players: Optional[str] = None,
          add_player_gamelog_names: Optional[str] = None, 
@@ -702,7 +712,7 @@ def main(mongodb_url: str,
         handle_gamelog_name_add(mongodb_url, add_player_gamelog_names)
 
     if fetch_players_input:
-        players = get_player_list(fetch_players_input, mongodb_url)
+        players = fetch_player_list(fetch_players_input, mongodb_url)
         print(players)
 
     if fetch_player_gamelogs:
@@ -712,7 +722,7 @@ def main(mongodb_url: str,
         season = parts[1] if len(parts) > 1 else None
 
         # Fetch player logs for the given player and optional season
-        player_logs = get_player_gamelogs(mongodb_url, player_name, season)
+        player_logs = fetch_player_gamelogs(mongodb_url, player_name, season)
         print(player_logs)
 
 
