@@ -42,7 +42,6 @@ def store_documents_in_mongodb(documents: list, mongodb_url: str, db_name: str, 
             print(f"Document with unique properties {query} found in MongoDB:")
             print(json.dumps(existing_document, indent=4, default=json_util.default))
         else:
-            import pdb; pdb.set_trace()
             collection.insert_one(document)
             print(f"Document with unique properties {query} inserted into MongoDB")
 
