@@ -5,8 +5,8 @@ from pymongo import MongoClient
 import re
 
 from utilities import get_stat_value, get_soup, convert_height_to_inches
-from database_utils import handle_missing_players, handle_gamelog_name_add, store_documents_in_mongodb
-from webscrapers import get_player_gamelog
+from database_utils import handle_missing_players, handle_gamelog_name_add, store_documents_in_mongodb, handle_missing_player_averages
+from webscrapers import get_player_gamelog, get_player_averages
 
 def fetch_player_list(players_input: str, mongodb_url: Optional[str] = None) -> List[dict]:
     """
@@ -252,7 +252,8 @@ def main(mongodb_url: str,
          check_missing_players: Optional[str] = None,
          add_player_gamelog_names: Optional[str] = None, 
          fetch_players: Optional[str] = None, 
-         fetch_gamelogs: Optional[str] = None):
+         fetch_gamelogs: Optional[str] = None,
+         check_missing_averages: Optional[str] = None):
     """
     Main entry point for the script. Delegates to different functions based on the input.
 
@@ -265,6 +266,9 @@ def main(mongodb_url: str,
     """
     if check_missing_players:
         handle_missing_players(mongodb_url, check_missing_players)
+
+    if check_missing_averages:
+        handle_missing_player_averages(mongodb_url, check_missing_averages)
 
     if add_player_gamelog_names:
         handle_gamelog_name_add(mongodb_url, add_player_gamelog_names)
@@ -288,6 +292,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Basketball Reference Webscraper")
     parser.add_argument("--mongodb-url", type=str, help="MongoDB connection string")
     parser.add_argument("--check-missing-players", type=str, help="Check and update missing game logs for a player (e.g. 'Kobe Bryant', 'a-c', 'b', 'Kobe Bryant,Paul Pierce')")
+    parser.add_argument("--check-missing-averages", type=str, help="Check and update missing season averages logs for a player (e.g. 'Kobe Bryant', 'a-c', 'b', 'Kobe Bryant,Paul Pierce')")
     parser.add_argument("--add-player-gamelog-names", type=str, help="Add player names to gamelogs based on initials or player names (e.g. 'Kobe Bryant', 'a-c', 'b', 'Kobe Bryant, Paul Pierce')")
     parser.add_argument("--fetch-players", type=str, help="Fetch player information based on a name, list of names, initials, or a range of initials (e.g. 'Kobe Bryant', 'a-c', 'b')")
     parser.add_argument("--fetch-gamelogs", type=str, help="Fetch player game logs for the specified player and optional season (e.g., 'Kobe Bryant:2009')")
@@ -297,4 +302,5 @@ if __name__ == '__main__':
          args.check_missing_players, 
          args.add_player_gamelog_names, 
          args.fetch_players, 
-         args.fetch_gamelogs)
+         args.fetch_gamelogs,
+         args.check_missing_averages)
