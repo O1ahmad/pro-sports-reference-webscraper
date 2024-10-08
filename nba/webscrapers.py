@@ -65,7 +65,8 @@ def get_player_averages(player_name: str, player_link: str):
                     data['turnovers'] = get_stat_value(table_row, 'tov_per_g') or get_stat_value(table_row, 'tov')
                     data['personal_fouls'] = get_stat_value(table_row, 'pf_per_g') or get_stat_value(table_row, 'pf')
                     data['points'] = get_stat_value(table_row, 'pts_per_g') or get_stat_value(table_row, 'pts')
-                    data['awards'] = get_stat_value(table_row, 'awards_summary') or get_stat_value(table_row, 'award_summary') or get_stat_value(table_row, 'awards') or get_stat_value(table_row, 'trp_dbl')
+                    data['awards'] = get_stat_value(table_row, 'awards_summary') or get_stat_value(table_row, 'award_summary') or get_stat_value(table_row, 'awards')
+                    data['triple_doubles'] = get_stat_value(table_row, 'trp_dbl')
 
                     log.append(data)
             elif type == "advanced":
@@ -101,7 +102,7 @@ def get_player_averages(player_name: str, player_link: str):
                     data['dbpm'] = get_stat_value(table_row, 'dbpm')
                     data['bpm'] = get_stat_value(table_row, 'bpm')
                     data['vorp'] = get_stat_value(table_row, 'vorp')
-                
+
                     log.append(data)
     except Exception as e:
         # Print error and retry after 10 seconds

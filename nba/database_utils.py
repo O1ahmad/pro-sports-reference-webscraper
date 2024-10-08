@@ -198,10 +198,10 @@ def add_missing_averages_to_db(mongodb_url: str, player_name: Optional[str] = No
                     for avg in web_avgs:
                         db_avg = list(collection.find({"player_link": avg['player_link'], "type": avg['type'], "season": avg["season"], "playoffs": avg["playoffs"], 'team_id': avg["team_id"], 'lg_id': avg["lg_id"]}))
                         if not db_avg:
-                            log_file.write(f"Missing avg: Player: {avg['player']}, Season: {avg['season']}, Playoffs: {avg['playoffs']}\n")
+                            print(f"Missing avg: Player: {avg['player']}, Season: {avg['season']}, Playoffs: {avg['playoffs']}\n")
                             missing_averages.append(avg)
                         else:
-                            log_file.write(f"Player average stats found: Player: {avg['player']}, Season: {avg['season']}, Playoffs: {avg['playoffs']}\n")
+                            print(f"Player average stats found: Player: {avg['player']}, Season: {avg['season']}, Playoffs: {avg['playoffs']}\n")
                             total_avgs_in_db += 1
                     
                     # Output total games found in MongoDB and on the web
