@@ -186,7 +186,7 @@ def get_player_gamelog(player_name: str, player_link: str, season: str):
                 log.append(data)
 
         print(f"Processing player link: {player_link}, season: {season}")
-        time.sleep(5)
+        time.sleep(1)
 
     except Exception as e:
         # Print error and retry after 10 seconds
