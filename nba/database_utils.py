@@ -410,7 +410,7 @@ def handle_missing_coach_records(mongodb_url: str, check_missing_coaches: Option
         check_missing_players (Optional[str]): Input string to specify the players or initials to check.
     """
 
-    if len(check_missing_coaches.split(',')) > 0:
+    if len(check_missing_coaches) > 0 and len(check_missing_coaches.split(',')) > 0:
         # Handle comma-separated list of coaches names (e.g, 'Phil Jackson*, Joe Mazzulla')
         coach_names = check_missing_coaches.split(',')
         for name in coach_names:

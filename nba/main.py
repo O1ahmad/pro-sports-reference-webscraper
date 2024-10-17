@@ -271,7 +271,7 @@ def main(mongodb_url: str,
     if check_missing_averages:
         handle_missing_player_averages(mongodb_url, check_missing_averages)
 
-    if check_missing_coaches:
+    if check_missing_coaches != None:
         handle_missing_coach_records(mongodb_url, check_missing_coaches)
 
     if add_player_gamelog_names:

@@ -339,4 +339,5 @@ def get_coach_records(name: str, link: str):
         # Print error and retry after 10 seconds
         print(f"Error encountered while fetching {url}: {e}")
 
+    time.sleep(3)
     return records
