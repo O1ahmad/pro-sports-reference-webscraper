@@ -194,7 +194,7 @@ def get_player_gamelog(player_name: str, player_link: str, season: str):
 
     return log
 
-def fetch_player_list(last_initial: str):
+def get_player_list(last_initial: str):
     """
     Fetches the list of players whose last names start with the specified initial from Basketball Reference.
     Retries on failure.
@@ -245,3 +245,98 @@ def fetch_player_list(last_initial: str):
             print(f"Error encountered while fetching {url}: {e}")
 
     return players
+
+def get_coach_list():
+    """
+    Fetches the list of players whose last names start with the specified initial from Basketball Reference.
+    Retries on failure.
+
+    Args:
+        last_initial (str): The first letter of the players' last names.
+
+    Returns:
+        players (list): A list of dictionaries containing player data.
+    """
+    url = 'https://www.basketball-reference.com/coaches/'
+    coaches = []
+
+    try:
+        # Fetch the page and parse with BeautifulSoup
+        response = requests.get(url)
+        page_soup = get_soup(response)
+
+        # Find player table rows
+        table_rows = page_soup.find('tbody').find_all('tr')
+        # Extract player data
+        for row in table_rows:
+            try:
+                data = {}
+                data['coach'] = row.find('th', {'data-stat': 'coach'}).text.encode('latin1').decode('utf-8')
+                data['link'] = row.find('a').get('href').replace('.html', '')
+                data['season_min'] = get_stat_value(row, 'season_min')
+                data['season_max'] = get_stat_value(row, 'season_max')
+                data['birth_date'] = get_stat_value(row, 'birth_date')
+                data['college'] = get_stat_value(row, 'college')
+
+                # Try to get the college link if it exists
+                college_element = get_stat_value(row, 'college', is_text=False)
+                if college_element:
+                    try:
+                        data['college_link'] = college_element.find('a').get('href')
+                    except AttributeError:
+                        print(f"College link not found for {data['player']}")
+
+                coaches.append(data)
+            except Exception as e:
+                print(f"Error encountered while processing: {row}, {e}")
+
+    except Exception as e:
+        # Print error and retry after 10 seconds
+        print(f"Error encountered while fetching {url}: {e}")
+
+    return coaches
+
+def get_coach_records(name: str, link: str):
+    url = f"https://www.basketball-reference.com{link}.html"
+    records = []
+
+    try:
+        # Fetch the page and parse with BeautifulSoup
+        response = requests.get(url)
+        page_soup = get_soup(response)
+
+        # Find player table rows
+        table_rows = page_soup.find('tbody').find_all('tr')
+        for row in table_rows:
+            try:
+                data = {}
+                data['coach'] = name
+                data['link'] = link
+                data['age'] = get_stat_value(row, 'age')
+                data['season'] = row.find('th', {'data-stat': 'season'}).text.encode('latin1').decode('utf-8')
+                data['team_id'] = get_stat_value(row, 'team_id')
+                data['league_id'] = get_stat_value(row, 'lg_id')
+                if get_stat_value(row, 'role'):
+                    data['role'] = get_stat_value(row, 'role')
+                else:
+                    data['games'] = get_stat_value(row, 'g')
+                    data['wins'] = get_stat_value(row, 'wins')
+                    data['losses'] = get_stat_value(row, 'losses')
+                    data['win_loss_pct'] = get_stat_value(row, 'win_loss_pct')
+                    data['wins_over_500'] = get_stat_value(row, 'wins_over_500')
+                    data['rank_team'] = get_stat_value(row, 'rank_team')
+                    data['playoff_games'] = get_stat_value(row, 'g_playoffs')
+                    data['playoff_wins'] = get_stat_value(row, 'wins_playoffs')
+                    data['losses_playoffs'] = get_stat_value(row, 'losses_playoffs')
+                    data['win_loss_pct_playoffs'] = get_stat_value(row, 'win_loss_pct_playoffs')
+                    data['coach_remarks'] = get_stat_value(row, 'coach_remarks')
+
+                records.append(data)
+            except Exception as e:
+                print(f"Error encountered while processing: {row}, {e}")
+
+    except Exception as e:
+        # Print error and retry after 10 seconds
+        print(f"Error encountered while fetching {url}: {e}")
+
+    return records

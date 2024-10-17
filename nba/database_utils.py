@@ -3,7 +3,7 @@ import json
 
 from pymongo import MongoClient
 from bson import json_util
-from webscrapers import fetch_player_list, get_player_gamelog, get_player_averages
+from webscrapers import get_player_list, get_player_gamelog, get_player_averages, get_coach_list, get_coach_records
 from typing import Optional, List
 
 ### Database Helper Methods ###
@@ -66,7 +66,7 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
             last_name_initial = player_name.split()[-1][0].lower()
             print(f"Searching for player: {player_name} (last name initial '{last_name_initial}')")
             log_file.write(f"Searching for player: {player_name} (last name initial '{last_name_initial}')\n")
-            players = fetch_player_list(last_name_initial)
+            players = get_player_list(last_name_initial)
 
             for player in players:
                 if player['player'].lower() == player_name.lower():
@@ -119,7 +119,7 @@ def add_missing_games_to_db(mongodb_url: str, player_name: Optional[str] = None,
 
             for initial in initials:
                 print(f"Scanning players with last name starting with '{initial.upper()}'")
-                players = fetch_player_list(initial)
+                players = get_player_list(initial)
 
                 for player in players:
                     total_games_in_db = 0  # Counter for the total number of games found in MongoDB
@@ -183,7 +183,7 @@ def add_missing_averages_to_db(mongodb_url: str, player_name: Optional[str] = No
             last_name_initial = player_name.split()[-1][0].lower()
             print(f"Searching for player: {player_name} (last name initial '{last_name_initial}')")
             log_file.write(f"Searching for player: {player_name} (last name initial '{last_name_initial}')\n")
-            players = fetch_player_list(last_name_initial)
+            players = get_player_list(last_name_initial)
 
             for player in players:
                 if player['player'].lower() == player_name.lower():
@@ -235,7 +235,7 @@ def add_missing_averages_to_db(mongodb_url: str, player_name: Optional[str] = No
 
             for initial in initials:
                 print(f"Scanning players with last name starting with '{initial.upper()}'")
-                players = fetch_player_list(initial)
+                players = get_player_list(initial)
 
                 for player in players:
                     total_avgs_in_db = 0  # Counter for the total number of averages found in MongoDB
@@ -291,20 +291,20 @@ def handle_missing_players(mongodb_url: str, check_missing_players: Optional[str
         start, end = check_missing_players.split('-')
         initials = [chr(i) for i in range(ord(start.lower()), ord(end.lower()) + 1)]
         for initial in initials:
-            add_missing_games_to_db(mongodb_url, last_initial=initial)
+            return add_missing_games_to_db(mongodb_url, last_initial=initial)
 
     elif ',' in check_missing_players:
         # Handle comma-separated list of player names (e.g., 'Kobe Bryant, Paul Pierce')
         player_names = check_missing_players.split(',')
         for player_name in player_names:
-            add_missing_games_to_db(mongodb_url, player_name=player_name.strip())
+            return add_missing_games_to_db(mongodb_url, player_name=player_name.strip())
 
     elif re.match(r'^[a-zA-Z]$', check_missing_players):
         # Handle single initial (e.g., 'b')
-        add_missing_games_to_db(mongodb_url, last_initial=check_missing_players.lower())
+        return add_missing_games_to_db(mongodb_url, last_initial=check_missing_players.lower())
 
     # Handle specific player name (e.g., 'Kobe Bryant')
-    add_missing_games_to_db(mongodb_url, player_name=check_missing_players)
+    return add_missing_games_to_db(mongodb_url, player_name=check_missing_players)
 
 def handle_missing_player_averages(mongodb_url: str, check_missing_averages: Optional[str]):
     """
@@ -399,3 +399,76 @@ def process_player_gamelogs(client: MongoClient, player_data: List[dict]):
             )
 
             print(f"Updated {result.modified_count} documents for player: {cleaned_player_name}")
+
+def handle_missing_coach_records(mongodb_url: str, check_missing_coaches: Optional[str]):
+    """
+    Processes the 'check_missing_coaches' input and delegates the task to the appropriate
+    logic based on whether initials, coaches names, or ranges of initials are provided.
+
+    Args:
+        mongodb_url (str): MongoDB connection string.
+        check_missing_players (Optional[str]): Input string to specify the players or initials to check.
+    """
+
+    if len(check_missing_coaches.split(',')) > 0:
+        # Handle comma-separated list of coaches names (e.g, 'Phil Jackson*, Joe Mazzulla')
+        coach_names = check_missing_coaches.split(',')
+        for name in coach_names:
+            return add_missing_coaches_to_db(mongodb_url, coach_names)
+
+    return add_missing_coaches_to_db(mongodb_url)
+
+def add_missing_coaches_to_db(mongodb_url: str, coach_names: Optional[List[str]] = None):
+    """
+    Find and log missing coach records by comparing website data and MongoDB data. If missing records
+    are found, they will be added to the database.
+
+    Args:
+        mongodb_url (str): MongoDB connection string.
+        coach_names (Optional[List[str]]): List of coach names to check.
+    """
+    client = MongoClient(mongodb_url)
+    db = client["nba_players"]
+    collection = db["coach_records"]
+    missing_records = []
+
+    with open("missed_records.log", "a") as log_file:
+        coaches = get_coach_list()
+
+        for coach in coaches:
+            if coach_names and coach['coach'].lower() not in [name.lower() for name in coach_names]:
+                continue
+
+            print(f"Found coach: {coach['coach']}")
+            log_file.write(f"Found coach: {coach['coach']}\n")
+
+            total_records_in_db = 0
+
+            web_records = get_coach_records(coach['coach'], coach['link'])
+            total_records_on_web = len(web_records)
+            for record in web_records:
+                db_record = list(collection.find({"coach": record["coach"], "link": record['link'], "season": record['season']}))
+                if not db_record:
+                    log_file.write(f"Missing record: Coach: {coach['coach']}, Season: {record['season']}\n")
+                    missing_records.append(record)
+                else:
+                    total_records_in_db += 1
+
+            print(f"Total number of records found in MongoDB for coach {coach['coach']}: {total_records_in_db}")
+            print(f"Total number of records found on the web for coach {coach['coach']}: {total_records_on_web}")
+            log_file.write(f"Total number of records found in MongoDB for coach {coach['coach']}: {total_records_in_db}\n")
+            log_file.write(f"Total number of records found on the web for coach {coach['coach']}: {total_records_on_web}\n")
+
+            if total_records_in_db != total_records_on_web:
+                total_missing_records = total_records_on_web - total_records_in_db
+                if total_missing_records != len(missing_records):
+                    print("ERROR: total missing records counts do NOT match!")
+                print(f"Missing records count: {len(missing_records)}")
+                store_documents_in_mongodb(missing_records, mongodb_url, "nba_players", "coach_records", ["coach", "season", "team"])
+                print(f"Added {len(missing_records)} missing records for coach '{coach['coach']}' to MongoDB.")
+                missing_records.clear()
+            else:
+                print(f"No missing records found for coach: {coach['coach']}\n")
+                log_file.write(f"No missing records found for coach: {coach['coach']}\n")
+
+    return missing_records
