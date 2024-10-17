@@ -447,9 +447,9 @@ def add_missing_coaches_to_db(mongodb_url: str, coach_names: Optional[List[str]]
             web_records = get_coach_records(coach['coach'], coach['link'])
             total_records_on_web = len(web_records)
             for record in web_records:
-                db_record = list(collection.find({"coach": record["coach"], "link": record['link'], "season": record['season']}))
+                db_record = list(collection.find({"coach": record["coach"], "link": record['link'], "season": record['season'], "role": record['role']}))
                 if not db_record:
-                    log_file.write(f"Missing record: Coach: {coach['coach']}, Season: {record['season']}\n")
+                    log_file.write(f"Missing record: Coach: {coach['coach']}, Season: {record['season']}, Role: {record['role']}\n")
                     missing_records.append(record)
                 else:
                     total_records_in_db += 1
@@ -464,7 +464,7 @@ def add_missing_coaches_to_db(mongodb_url: str, coach_names: Optional[List[str]]
                 if total_missing_records != len(missing_records):
                     print("ERROR: total missing records counts do NOT match!")
                 print(f"Missing records count: {len(missing_records)}")
-                store_documents_in_mongodb(missing_records, mongodb_url, "nba_players", "coach_records", ["coach", "season", "team"])
+                store_documents_in_mongodb(missing_records, mongodb_url, "nba_players", "coach_records", ["coach", "season", "team", "role"])
                 print(f"Added {len(missing_records)} missing records for coach '{coach['coach']}' to MongoDB.")
                 missing_records.clear()
             else:

@@ -319,6 +319,7 @@ def get_coach_records(name: str, link: str):
                 if get_stat_value(row, 'role'):
                     data['role'] = get_stat_value(row, 'role')
                 else:
+                    data['role'] = "Head Coach"
                     data['games'] = get_stat_value(row, 'g')
                     data['wins'] = get_stat_value(row, 'wins')
                     data['losses'] = get_stat_value(row, 'losses')
