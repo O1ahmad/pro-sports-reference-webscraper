@@ -413,8 +413,7 @@ def handle_missing_coach_records(mongodb_url: str, check_missing_coaches: Option
     if len(check_missing_coaches) > 0 and len(check_missing_coaches.split(',')) > 0:
         # Handle comma-separated list of coaches names (e.g, 'Phil Jackson*, Joe Mazzulla')
         coach_names = check_missing_coaches.split(',')
-        for name in coach_names:
-            return add_missing_coaches_to_db(mongodb_url, coach_names)
+        return add_missing_coaches_to_db(mongodb_url, coach_names)
 
     return add_missing_coaches_to_db(mongodb_url)
 

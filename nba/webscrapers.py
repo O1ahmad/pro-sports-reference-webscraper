@@ -284,7 +284,7 @@ def get_coach_list():
                     try:
                         data['college_link'] = college_element.find('a').get('href')
                     except AttributeError:
-                        print(f"College link not found for {data['player']}")
+                        print(f"College link not found for {data['coach']}")
 
                 coaches.append(data)
             except Exception as e:
