@@ -97,12 +97,12 @@ Example usage:
 
 ```bash
 # Game logs for a single season
-python nba/main.py --mongodb-url <mongo-url> --fetch-gamelogs "Kevin Garnett:2002" # With a season:
+python nba/main.py --mongodb-url <mongo-url> --fetch-gamelogs "Kevin Garnett:2002" # With a season
 ```
 
 ```bash
 # Game log for all seasons
-python nba/main.py --mongodb-url <mongo-url> --fetch-gamelogs "Amen Thompson" # Without a season:
+python nba/main.py --mongodb-url <mongo-url> --fetch-gamelogs "Amen Thompson" # Without a season
 ```
 
 ## 📝 Contributing
